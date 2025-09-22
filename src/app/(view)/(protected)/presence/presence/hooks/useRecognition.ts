@@ -118,7 +118,10 @@ export const useRecognition = (open: boolean) => {
 
       // for (const options of fetchOptions) {
       try {
-        const res = await fetch(url);
+        const res = await fetch(url, {
+          mode: "no-cors",
+          headers: { "Cache-Control": "no-cache" },
+        });
 
         if (!res.ok) {
           // continue; // Try next option
