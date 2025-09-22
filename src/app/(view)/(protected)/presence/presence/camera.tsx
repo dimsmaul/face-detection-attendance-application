@@ -32,6 +32,7 @@ const PresenceForm: React.FC<PresenceForm> = (props) => {
     confidence,
     setConfidence,
     stopCamera,
+    status,
   } = useRecognition(props.open);
 
   const mutation = useMutation({
@@ -73,7 +74,6 @@ const PresenceForm: React.FC<PresenceForm> = (props) => {
     >
       <DialogContent className="max-w-4xl">
         <DialogTitle>Presence</DialogTitle>
-        <p>{JSON.stringify(props.data)}</p>
 
         <div className="flex flex-col items-center justify-centerp-4">
           {/* FIXME: this for check when error again */}
@@ -91,7 +91,30 @@ const PresenceForm: React.FC<PresenceForm> = (props) => {
             </p>
           </div> */}
 
-          <div className="relative mb-4 border-4 border-gray-300 rounded-lg overflow-hidden">
+          <div className="mb-4 p-4 bg-white rounded shadow-md w-full max-w-md">
+            <p
+              // className={`text-center ${
+              //   status.includes("Error")
+              //     ? "text-red-500"
+              //     : status.includes("recognized")
+              //     ? "text-green-500"
+              //     : "text-gray-700"
+              // }`}
+              className={cn(
+                "text-center font-semibold ",
+                confidence * 100 < 50 ? "text-red-500" : "text-green-500"
+              )}
+            >
+              Face Recognition Validation : {(confidence * 100).toFixed(0)}%
+            </p>
+          </div>
+
+          <div
+            className={cn(
+              "relative mb-4 border-1 border-gray-300 rounded-lg overflow-hidden",
+              confidence * 100 < 50 ? "border-red-500" : "border-green-500"
+            )}
+          >
             {captured ? (
               <>
                 <img src={URL.createObjectURL(captured)} alt="Captured" />
@@ -116,7 +139,6 @@ const PresenceForm: React.FC<PresenceForm> = (props) => {
           <div className="flex space-x-4">
             {captured ? (
               <div className="flex gap-4">
-                {/* retry button */}
                 <button
                   onClick={() => {
                     setConfidence(0);
@@ -137,13 +159,13 @@ const PresenceForm: React.FC<PresenceForm> = (props) => {
                     handleSend();
                   }}
                   className={cn(
-                    "px-4 py-4 font-semibold flex items-center gap-2 rounded-full",
+                    "px-4 py-4 font-semibold flex items-center gap-2 rounded-full justify-center",
                     "bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50"
                   )}
                   // NOTE: user cant send presence if confidence < 50%
                   disabled={confidence * 100 < 50}
                 >
-                  <Send /> {confidence * 100}
+                  <Send />
                 </button>
               </div>
             ) : (
@@ -162,7 +184,6 @@ const PresenceForm: React.FC<PresenceForm> = (props) => {
               </button>
             )}
           </div>
-
           {/* <DebugInfo /> */}
         </div>
       </DialogContent>

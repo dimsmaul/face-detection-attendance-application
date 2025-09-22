@@ -74,7 +74,9 @@ const Presence = () => {
                   <div className="w-1/2 grid grid-cols-2 gap-2 ">
                     <div className="grid gap-2">
                       <Label>Date</Label>
-                      <Input value={presence?.date} disabled />
+                      <Input value={dayjs(
+                          presence?.date + "T" + presence?.time
+                        ).format("YYYY-MM-DD")} disabled />
                     </div>
                     <div className="grid gap-2">
                       <Label>Time</Label>

@@ -71,90 +71,118 @@ export const useRecognition = (open: boolean) => {
   }, [users.user?.profile]);
 
   const loadReferenceImage = async (url: string): Promise<HTMLImageElement> => {
-    return new Promise<HTMLImageElement>((resolve, reject) => {
-      // Method 1: Direct image loading
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-
-      img.onload = () => {
-        resolve(img);
-      };
-
-      img.onerror = (err) => {
-        // Try Method 2: Fetch approach
-        tryFetchMethod(url, resolve, reject);
-      };
-
-      // Set a timeout to check if image is taking too long
-      const timeoutId = setTimeout(() => {
-        if (!img.complete) {
-          tryFetchMethod(url, resolve, reject);
-        }
-      }, 5000); // 5 seconds timeout
-
-      img.src = url;
-
-      // Clear timeout if image loads successfully
-      img.onload = () => {
-        clearTimeout(timeoutId);
-        resolve(img);
-      };
-    });
-  };
-
-  const tryFetchMethod = async (
-    url: string,
-    resolve: (img: HTMLImageElement) => void,
-    reject: (err: Error) => void
-  ) => {
-    try {
-      // Try with different fetch options
-      // TODO: Need to be test
-      // const fetchOptions = [
-      //   { mode: "cors" },
-      //   { mode: "no-cors" },
-      //   { headers: { "Cache-Control": "no-cache" } },
-      // ];
-
-      // for (const options of fetchOptions) {
+    return new Promise<HTMLImageElement>(async (resolve, reject) => {
       try {
-        const res = await fetch(url, {
-          mode: "no-cors",
-          headers: { "Cache-Control": "no-cache" },
+        const res = await fetch("/api/v1/proxy-image", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ url }),
         });
 
         if (!res.ok) {
-          // continue; // Try next option
+          return reject(new Error(`Proxy error! status: ${res.status}`));
         }
 
         const blob = await res.blob();
-
         const blobUrl = URL.createObjectURL(blob);
-        const img = new Image();
 
+        const img = new Image();
         img.onload = () => {
-          URL.revokeObjectURL(blobUrl); // Clean up
+          URL.revokeObjectURL(blobUrl);
           resolve(img);
         };
-
-        img.onerror = (err) => {
-          URL.revokeObjectURL(blobUrl); // Clean up
-          // Continue to next option
+        img.onerror = () => {
+          URL.revokeObjectURL(blobUrl);
+          reject(new Error("Failed to load image from proxy response"));
         };
 
         img.src = blobUrl;
-        return; // Exit if we get here
-      } catch (fetchErr) {
-        // Continue to next option
+      } catch (error) {
+        reject(error instanceof Error ? error : new Error(String(error)));
       }
-      // }
-
-      // If all fetch attempts failed
-      reject(new Error("All image loading methods failed"));
-    } catch (error) {
-      reject(error instanceof Error ? error : new Error(String(error)));
-    }
+    });
   };
+
+  // const loadReferenceImage = async (url: string): Promise<HTMLImageElement> => {
+  //   return new Promise<HTMLImageElement>((resolve, reject) => {
+  //     try {
+  //       // Method 1: Direct image loading
+  //       const img = new Image();
+  //       img.crossOrigin = "anonymous";
+
+  //       img.onload = () => {
+  //         resolve(img);
+  //       };
+
+  //       img.onerror = (err) => {
+  //         // Try Method 2: Fetch approach
+  //         tryFetchMethod(url, resolve, reject);
+  //       };
+
+  //       // Set a timeout to check if image is taking too long
+  //       const timeoutId = setTimeout(() => {
+  //         if (!img.complete) {
+  //           tryFetchMethod(url, resolve, reject);
+  //         }
+  //       }, 5000); // 5 seconds timeout
+
+  //       img.src = url;
+
+  //       // Clear timeout if image loads successfully
+  //       img.onload = () => {
+  //         clearTimeout(timeoutId);
+  //         resolve(img);
+  //       };
+  //     } catch (error) {
+  //       reject(error instanceof Error ? error : new Error(String(error)));
+  //     }
+  //   });
+  // };
+
+  // const tryFetchMethod = async (
+  //   url: string,
+  //   resolve: (img: HTMLImageElement) => void,
+  //   reject: (err: Error) => void
+  // ) => {
+  //   try {
+  //     try {
+  //       const res = await fetch(url);
+
+  //       if (!res.ok) {
+  //         setStatus(`HTTP error! status: ${res.status}`);
+  //         throw new Error(`HTTP error! status: ${res.status}`);
+  //       }
+
+  //       const blob = await res.blob();
+
+  //       const blobUrl = URL.createObjectURL(blob);
+  //       const img = new Image();
+
+  //       img.onload = () => {
+  //         URL.revokeObjectURL(blobUrl);
+  //         resolve(img);
+  //       };
+
+  //       img.onerror = (err) => {
+  //         reject(new Error("Failed to load image from blob URL"));
+  //         URL.revokeObjectURL(blobUrl);
+  //       };
+
+  //       img.src = blobUrl;
+  //       return;
+  //     } catch (fetchErr) {
+  //       console.error("Fetch attempt failed:", fetchErr);
+  //       setStatus(`Fetch attempt failed: ${fetchErr}`);
+  //     }
+
+  //     // If all fetch attempts failed
+  //     reject(new Error("All image loading methods failed"));
+  //   } catch (error) {
+  //     reject(error instanceof Error ? error : new Error(String(error)));
+  //   }
+  // };
 
   const startCamera = async () => {
     if (!isModelLoaded) return;
@@ -240,7 +268,6 @@ export const useRecognition = (open: boolean) => {
         }
 
         setConfidence(confidence);
-        setIsProcessing(false);
 
         // const formData = new FormData();
         // formData.append("file", blob, "capture.jpg");
